@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="uz">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>VIP Signal UI</title>
+<link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@800&display=swap" rel="stylesheet">
+<style>
+    *{
+        font-family:'Orbitron', sans-serif !important;
+    }
+    html,body{
+        margin:0;
+        background:#000;
+        height:100%;
+        display:flex;
+        justify-content:center;
+        align-items:center;
+        flex-direction:column;
+        color:#fff;
+        user-select:none;
+    }
+    .box{
+        width:150%;
+        max-width:380px;
+        height:180px;
+        border-radius:10%;
+        display:flex;
+        justify-content:center;
+        align-items:center;
+        font-size:40px;
+        border:2px solid #0f0;
+        box-shadow:0 0 20px #0f0,0 0 40px #0f0;
+        color:#0f0;
+    }
+    .btn{
+        margin-top:90px;
+        padding:15px 40px;
+        font-size:22px;
+        border-radius:12px;
+        border:2px solid #ff00aa;
+        background:#ff00aa;
+        color:#fff;
+        box-shadow:0 0 15px #ff00dd,0 0 25px #ff00dd;
+    }
+</style>
+</head>
+<body>
+
+<div class="box" id="vipBox">VIP</div>
+<button class="btn" id="signalBtn">SIGNAL</button>
+
+<script>
+const box = document.getElementById("vipBox");
+document.getElementById("signalBtn").onclick = () => {
+    box.style.transition = "0s";
+    let t = 0;
+    let timer = setInterval(()=>{
+        t++;
+        const r = Math.random()<0.5 ? "BUY" : "SELL";
+        if(r==="BUY"){
+            box.style.color="#4597FF";
+            box.style.borderColor="#4597FF";
+            box.style.boxShadow="0 0 20px #4597FF,0 0 40px #4597FF";
+        }else{
+            box.style.color="#FF5858";
+            box.style.borderColor="#FF5858";
+            box.style.boxShadow="0 0 20px #FF5858,0 0 40px #FF5858";
+        }
+        box.innerText=r;
+        if(t>=10){
+            clearInterval(timer);
+        }
+    },100);
+};
+</script>
+
+</body>
+</html>
