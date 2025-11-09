@@ -5,11 +5,39 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>VIP Signal UI</title>
 <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@800&display=swap" rel="stylesheet">
+<script type="module">
+  // Firebase modullarini chaqiramiz
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+  import { getDatabase, ref, set } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-database.js";
+
+  // Firebase config siz bergan ma’lumotlar asosida
+  const firebaseConfig = {
+    apiKey: "AIzaSyB1_XCbC777hKwxlilhMeq5Hpty1dvDT1I",
+    authDomain: "giper-8fd92.firebaseapp.com",
+    databaseURL: "https://giper-8fd92-default-rtdb.firebaseio.com",
+    projectId: "giper-8fd92",
+    storageBucket: "giper-8fd92.firebasestorage.app",
+    messagingSenderId: "485740337398",
+    appId: "1:485740337398:web:ab901fd4f28219ea5834d7"
+  };
+
+  const app = initializeApp(firebaseConfig);
+  const db = getDatabase(app);
+
+  window.sendSignalToFirebase = async function(signal) {
+    try {
+      await set(ref(db, 'trade/'), { trade: signal });
+      console.log(`Yozildi: ${signal}`);
+    } catch (e) {
+      console.error("Firebase yozish xatosi:", e);
+    }
+  }
+</script>
 <style>
-    *{
+    * {
         font-family:'Orbitron', sans-serif !important;
     }
-    html,body{
+    html,body {
         margin:0;
         background:#000;
         height:100%;
@@ -20,7 +48,7 @@
         color:#fff;
         user-select:none;
     }
-    .box{
+    .box {
         width:150%;
         max-width:380px;
         height:180px;
@@ -30,18 +58,20 @@
         align-items:center;
         font-size:40px;
         border:2px solid #0f0;
-        box-shadow:0 0 20px #0f0,0 0 40px #0f0;
+        box-shadow:0 0 10px #0f0;
         color:#0f0;
+        transition:all 0.3s ease;
     }
-    .btn{
+    .btn {
         margin-top:90px;
         padding:15px 40px;
         font-size:22px;
         border-radius:12px;
-        border:2px solid #ff00aa;
-        background:#ff00aa;
-        color:#fff;
-        box-shadow:0 0 15px #ff00dd,0 0 25px #ff00dd;
+        border:2px solid #fff;
+        background:#fff;
+        color:black;
+        box-shadow:0 0 15px #fff,0 0 25px #fff;
+        cursor:pointer;
     }
 </style>
 </head>
@@ -52,26 +82,29 @@
 
 <script>
 const box = document.getElementById("vipBox");
-document.getElementById("signalBtn").onclick = () => {
+const btn = document.getElementById("signalBtn");
+
+btn.onclick = () => {
     box.style.transition = "0s";
     let t = 0;
-    let timer = setInterval(()=>{
+    let timer = setInterval(() => {
         t++;
-        const r = Math.random()<0.5 ? "BUY" : "SELL";
-        if(r==="BUY"){
-            box.style.color="#4597FF";
-            box.style.borderColor="#4597FF";
-            box.style.boxShadow="0 0 20px #4597FF,0 0 40px #4597FF";
-        }else{
-            box.style.color="#FF5858";
-            box.style.borderColor="#FF5858";
-            box.style.boxShadow="0 0 20px #FF5858,0 0 40px #FF5858";
+        const r = Math.random() < 0.5 ? "BUY" : "SELL";
+        if (r === "BUY") {
+            box.style.color = "#4597FF";
+            box.style.borderColor = "#4597FF";
+            box.style.boxShadow = "0 0 10px #4597FF,0 0 40px #4597FF";
+        } else {
+            box.style.color = "#FF5858";
+            box.style.borderColor = "#FF5858";
+            box.style.boxShadow = "0 0 10px #FF5858,0 0 40px #FF5858";
         }
-        box.innerText=r;
-        if(t>=10){
+        box.innerText = r;
+        if (t === 10) {
             clearInterval(timer);
+            sendSignalToFirebase(r.toLowerCase()); // yozadi firebase ga
         }
-    },100);
+    }, 100);
 };
 </script>
 
