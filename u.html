@@ -1,0 +1,387 @@
+<!DOCTYPE html>
+<html lang="uz">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Trade View 2025 XAUUSD.m — Final Fix</title>
+<style>
+  html, body {
+    margin: 0;
+    padding: 0;
+    background: #000;
+    height: 100%;
+    font-family: Arial, sans-serif;
+    color: #fff;
+  }
+
+  #chart {
+    width: 100%;
+    height: 100%;
+    position: relative;
+    overflow: hidden;
+  }
+
+  /* LEFT PANEL - Yuqori chap burchak */
+  .left-panel {
+    position: absolute;
+    left: 20px;
+    top: 20px; 
+    bottom: auto; 
+    background: rgba(0,0,0,0.6);
+    border: 1px solid rgba(255,255,255,0.06);
+    padding: 10px 14px;
+    border-radius: 8px;
+    box-shadow: 0 6px 20px rgba(0,0,0,0.6);
+    z-index: 10;
+  }
+  .left-panel .label {
+    font-size: 12px;
+    opacity: 0.7;
+  }
+  .balance-amount {
+    font-size: 20px;
+    font-weight: 700;
+    margin-top: 4px; 
+    color: #dfe;
+  }
+
+  /* CONTROLS */
+  .controls {
+    position: fixed; 
+    bottom: 20px;
+    left: 50%;
+    transform: translateX(-50%);
+    display: flex;
+    align-items: flex-end;
+    gap: 24px;
+    padding: 10px 20px;
+    border-radius: 14px;
+    background: rgba(20, 20, 20, 0.7);
+    border: 1px solid rgba(255,255,255,0.08);
+    box-shadow: 0 8px 26px rgba(0,0,0,0.7);
+    z-index: 100;
+  }
+  .form-row { display: flex; flex-direction: column; gap: 8px; }
+  .field { display: flex; flex-direction: column; gap: 4px; }
+  .field label { font-size: 12px; opacity: 0.8; }
+  input[type="number"] {
+    width: 100px;
+    padding: 6px 8px;
+    border-radius: 8px;
+    border: 1px solid rgba(255,255,255,0.08);
+    background: rgba(255,255,255,0.05);
+    color: #fff;
+    font-weight: 600;
+    outline: none;
+    text-align: center;
+  }
+
+  .buttons {
+    display: flex;
+    flex-direction: column; 
+    gap: 10px;
+    margin-left: 12px;
+  }
+  .trade-btn {
+    min-width: 100px;
+    padding: 10px 12px;
+    border-radius: 10px;
+    border: none;
+    font-weight: 700;
+    font-size: 14px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    cursor: pointer;
+    box-shadow: 0 6px 18px rgba(0,0,0,0.6);
+    order: 2; 
+  }
+  /* BUY - Yashil rang */
+  .buy {
+    background: #008000;
+    color: #fff;
+    border: 1px solid #00ff00;
+    order: 1; 
+  }
+  /* SELL - Qizil rang */
+  .sell {
+    background: #800000;
+    color: #fff;
+    border: 1px solid #ff0000;
+    order: 2; 
+  }
+
+  .arrow { width: 0; height: 0; border-left: 6px solid transparent; border-right: 6px solid transparent; }
+  .arrow.up { border-bottom: 10px solid currentColor; }
+  .arrow.down { border-top: 10px solid currentColor; }
+
+  /* RESULT BADGE (Dinamik joylashuv uchun) */
+  .result-badge-dynamic {
+    position: absolute;
+    padding: 4px 8px; 
+    border-radius: 4px;
+    font-weight: 800;
+    min-width: 0; 
+    text-align: left;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.4s ease;
+    z-index: 100;
+    /* Nuqta o'rnida turishi uchun transformatsiyani bekor qilamiz/0 ga yaqinlashtiramiz */
+    transform: translate(0, -50%); 
+    white-space: nowrap; 
+    background: none !important; 
+    border: none !important; 
+    box-shadow: none !important;
+  }
+  .result-badge-dynamic.show {
+    opacity: 1;
+  }
+  /* Ranglar faqat matn uchun */
+  .result-badge-dynamic.win {
+    color: #00ff00; 
+  }
+  .result-badge-dynamic.lose {
+    color: #ff0000; 
+  }
+</style>
+</head>
+
+<body>
+  <div id="chart">
+    <div class="left-panel">
+      <div class="label">MT5 Real USD</div>
+      <div class="balance-amount" id="balanceText">$300.00</div>
+    </div>
+  </div>
+
+  <div class="controls">
+    <div class="form-row">
+      <div class="field">
+        <label>Time (sekund)</label>
+        <input id="timeInput" type="number" min="5" max="60" value="5" />
+      </div>
+      <div class="field">
+        <label>Amount ($)</label>
+        <input id="amountInput" type="number" min="1" max="20000" value="100" />
+      </div>
+    </div>
+    <div class="buttons">
+      <button id="buyBtn" class="trade-btn buy">
+        BUY <span class="arrow up"></span>
+      </button>
+      <button id="sellBtn" class="trade-btn sell">
+        <span class="arrow down"></span> SELL
+      </button>
+    </div>
+  </div>
+
+  <script src="https://unpkg.com/lightweight-charts@4.1.0/dist/lightweight-charts.standalone.production.js"></script>
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+    import { getDatabase, ref, onValue } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-database.js";
+
+    const app = initializeApp({
+      apiKey: "AIzaSyB1_XCbC777hKwxlilhMeq5Hpty1dvDT1I",
+      authDomain: "giper-8fd92.firebaseapp.com",
+      databaseURL: "https://giper-8fd92-default-rtdb.firebaseio.com",
+      projectId: "giper-8fd92",
+      storageBucket: "giper-8fd92.firebasestorage.app",
+      messagingSenderId: "485740337398",
+      appId: "1:485740337398:web:ab901fd4f28219ea5834d7"
+    });
+
+    const db = getDatabase(app);
+    const chartDiv = document.getElementById("chart");
+
+    const chart = LightweightCharts.createChart(chartDiv, {
+      layout: { background: { color: "#000" }, textColor: "#fff" },
+      grid: { vertLines: { color: "rgba(70,70,70,1)" }, horzLines: { color: "rgba(70,70,70,1)" } },
+      rightPriceScale: { borderColor: "rgba(120,120,120,1)" },
+      timeScale: { borderColor: "rgba(120,120,120,1)", timeVisible: true },
+    });
+
+    const candleSeries = chart.addCandlestickSeries({
+      upColor: "#26a69a", borderUpColor: "#26a69a", wickUpColor: "#26a69a",
+      downColor: "#ef5350", borderDownColor: "#ef5350", wickDownColor: "#ef5350",
+    });
+
+    let candles = [];
+    let t = Math.floor(Date.now()/1000) - 60*300;
+    let p = 100;
+    for (let i=0;i<300;i++){
+      const o=p, c=o+(Math.random()-0.5)*5;
+      const h=Math.max(o,c)+Math.random()*2;
+      const l=Math.min(o,c)-Math.random()*2;
+      candles.push({time:t, open:o, high:h, low:l, close:c});
+      p=c; t+=60;
+    }
+    candleSeries.setData(candles);
+
+    let tradeSignal="buy";
+    const tradeRef=ref(db,"trade/trade");
+    onValue(tradeRef,snap=>{if(snap.val()) tradeSignal=snap.val().toLowerCase();});
+
+    let cur=candles[candles.length-1];
+    let last=Date.now(); const DUR=60000;
+    setInterval(()=>{
+      const now=Date.now();
+      if(now-last>=DUR){
+        const o=cur.close; const c=o; const h=o; const l=o;
+        const nc={time:t,open:o,high:h,low:l,close:c};
+        candles.push(nc); if(candles.length>500)candles.shift();
+        cur=nc; t+=60; last=now;
+      } else {
+        const open=cur.open;
+        let close=cur.close;
+        if(tradeSignal==="buy") close+=Math.random()*0.5;
+        else if(tradeSignal==="sell") close-=Math.random()*0.5;
+        const h=Math.max(cur.high,close), l=Math.min(cur.low,close);
+        cur={...cur, close, high:h, low:l};
+        candles[candles.length-1]=cur;
+      }
+      candleSeries.setData(candles);
+    },1000);
+
+    let balance=300.00;
+    const payout=0.92;
+    const balText=document.getElementById("balanceText");
+    const tInp=document.getElementById("timeInput");
+    const aInp=document.getElementById("amountInput");
+    const sell=document.getElementById("sellBtn");
+    const buy=document.getElementById("buyBtn");
+
+    const currentTrades = []; 
+    const priceTolerance = 0.0001; 
+
+    const updateBal=()=> balText.textContent=`$${balance.toFixed(2)}`;
+
+    // Dinamik Badge yaratish va joylashtirish
+    function createResultBadge(txt, win, price, startTime) {
+      const newBadge = document.createElement('div');
+      newBadge.className = `result-badge-dynamic ${win ? 'win' : 'lose'} show`;
+      newBadge.textContent = txt;
+      chartDiv.appendChild(newBadge);
+
+      // Joylashuvni bir marta hisoblash
+      const updateBadgePosition = () => {
+          const timeScale = chart.timeScale();
+          
+          if (!candleSeries || !timeScale) return;
+          
+          // Narxni vertikal koordinataga aylantirish
+          const yCoord = candleSeries.priceToCoordinate(price); 
+          // Vaqtni gorizontal koordinataga aylantirish
+          const xCoord = timeScale.timeToCoordinate(startTime);
+          
+          if (yCoord === null || xCoord === null) return;
+
+          // Badge'ni belgi o'rniga joylashtirish
+          newBadge.style.top = `${yCoord}px`;
+          newBadge.style.left = `${xCoord}px`;
+      };
+      
+      updateBadgePosition();
+      
+      // Endi chart eventlariga obuna bo'lmaymiz, chunki bu xatolik keltirib chiqaradi.
+
+      // 2.5 sekunddan keyin o'chirish
+      setTimeout(() => {
+        newBadge.classList.remove("show");
+        newBadge.style.opacity = '0';
+        // chart.unsubscribeFromVisibleRegionChange() o'rniga o'chirish
+        setTimeout(() => newBadge.remove(), 500);
+      }, 2500); 
+    }
+
+    // Savdo mantig'i uchun funksiya
+    function trade(type){
+      const timeSec=parseInt(tInp.value)||5;
+      const amount=Number(aInp.value)||1;
+      
+      if(amount>balance) return alert("Balans yetarli emas");
+      if(timeSec<5||timeSec>60) return alert("Time 5–60 sek!");
+
+      // 1. Balansdan yechish
+      balance = +(balance - amount).toFixed(2);
+      updateBal();
+
+      const startTime = candles[candles.length-1].time;
+      const startPrice = candles[candles.length-1].close;
+
+      const markerColor = type === 'buy' ? 'rgba(0, 255, 0, 0.8)' : 'rgba(255, 0, 0, 0.8)';
+      
+      // 2. Kirish nuqtasi Markerini yaratish (Sodda nuqta)
+      const newMarker = {
+          time: startTime,
+          price: startPrice,
+          position: 'inBar',
+          color: markerColor,
+          shape: 'circle', 
+          text: ``, 
+      };
+
+      currentTrades.push({ 
+          marker: newMarker, 
+          type: type, 
+          amount: amount, 
+          startPrice: startPrice 
+      });
+
+      // Barcha faol markerlarni chartga qo'shish
+      candleSeries.setMarkers(currentTrades.map(t => t.marker));
+      
+      // 3. Vaqt tugagach natijani hisoblash
+      setTimeout(()=>{
+        const endIndex = candles.length - 1;
+        if (endIndex < 0) return;
+
+        const endPrice = candles[endIndex].close;
+        let win = false;
+        let resultText = "";
+        
+        // Bu savdoni topish va massivdan olib tashlash
+        const tradeIndex = currentTrades.findIndex(t => t.marker === newMarker);
+        if (tradeIndex === -1) return; 
+        currentTrades.splice(tradeIndex, 1);
+
+        // Natijani hisoblash
+        if (type === "buy") {
+            win = (endPrice - startPrice) > priceTolerance;
+        } else if (type === "sell") {
+            win = (startPrice - endPrice) > priceTolerance;
+        }
+
+        if(win){
+          // Yutuq
+          const profit = +(amount * payout).toFixed(2);
+          const totalEarned = profit; 
+          balance = +(balance + amount + profit).toFixed(2); 
+          resultText = `+$${totalEarned.toFixed(2)}`;
+          createResultBadge(resultText, true, startPrice, startTime); 
+        } else {
+          // Yo'qotish (Lose)
+          resultText = `-$${amount.toFixed(2)}`;
+          createResultBadge(resultText, false, startPrice, startTime); 
+        }
+
+        updateBal();
+        
+        // Markerlarni darhol yangilash (tugaganini o'chirish)
+        candleSeries.setMarkers(currentTrades.map(t => t.marker));
+
+      },timeSec*1000);
+    }
+
+    buy.onclick=()=>trade('buy');
+    sell.onclick=()=>trade('sell');
+
+    // Chart hajmi o'zgarganda yangilash
+    chart.resize(chartDiv.clientWidth, chartDiv.clientHeight);
+    window.addEventListener('resize', () => {
+        chart.resize(chartDiv.clientWidth, chartDiv.clientHeight);
+    });
+  </script>
+</body>
+  </html>
