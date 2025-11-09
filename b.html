@@ -1,140 +1,164 @@
 <!DOCTYPE html>
 <html lang="uz">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>MetaTrade</title>
-<style>
-  html, body {
-    margin: 0;
-    padding: 0;
-    background: #000;
-    height: 100%;
-    font-family: Arial, sans-serif;
-  }
-  #chart {
-    width: 100%;
-    height: 100%;
-    position: relative;
-  }
-</style>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Trade View 2025 XAUUSD.m</title>
+  <style>
+    html, body {
+      margin: 0;
+      padding: 0;
+      background: #000000;
+      height: 100%;
+      font-family: Arial, sans-serif;
+    }
+    #chart {
+      width: 100%;
+      height: 100%;
+      position: relative;
+    }
+    .chart-header {
+      position: absolute;
+      top: 10px;
+      left: 5px;
+      z-index: 10;
+      color: #ffffff;
+      font-family: Arial, sans-serif;
+    }
+    .chart-header .symbol {
+      font-weight: 900;
+      color: #4597FF;
+      font-size: 13px;
+    }
+    .chart-header .desc {
+      font-weight: 800;
+      color: #ffffff;
+      font-size: 12px;
+      margin-top: 2px;
+    }
+  </style>
 
-<script src="https://unpkg.com/lightweight-charts@4.1.0/dist/lightweight-charts.standalone.production.js"></script>
+  <script src="https://unpkg.com/lightweight-charts@4.1.0/dist/lightweight-charts.standalone.production.js"></script>
 
-<script type="module">
-  import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
-  import { getDatabase, ref, onValue } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-database.js";
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+    import { getDatabase, ref, onValue } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-database.js";
 
-  const firebaseConfig = {
-    apiKey: "AIzaSyB1_XCbC777hKwxlilhMeq5Hpty1dvDT1I",
-    authDomain: "giper-8fd92.firebaseapp.com",
-    databaseURL: "https://giper-8fd92-default-rtdb.firebaseio.com",
-    projectId: "giper-8fd92",
-    storageBucket: "giper-8fd92.firebasestorage.app",
-    messagingSenderId: "485740337398",
-    appId: "1:485740337398:web:ab901fd4f28219ea5834d7"
-  };
+    const firebaseConfig = {
+      apiKey: "AIzaSyB1_XCbC777hKwxlilhMeq5Hpty1dvDT1I",
+      authDomain: "giper-8fd92.firebaseapp.com",
+      databaseURL: "https://giper-8fd92-default-rtdb.firebaseio.com",
+      projectId: "giper-8fd92",
+      storageBucket: "giper-8fd92.firebasestorage.app",
+      messagingSenderId: "485740337398",
+      appId: "1:485740337398:web:ab901fd4f28219ea5834d7"
+    };
 
-  const app = initializeApp(firebaseConfig);
-  const db = getDatabase(app);
+    const app = initializeApp(firebaseConfig);
+    const db = getDatabase(app);
 
-  const chart = LightweightCharts.createChart(document.getElementById("chart"), {
-    layout: {
-      background: { color: "#000" },
-      textColor: "#ffffff",
-    },
-    grid: {
-      vertLines: { color: "rgba(70, 70, 70, 1)" },
-      horzLines: { color: "rgba(70, 70, 70, 1)" },
-    },
-    rightPriceScale: {
-      borderColor: "rgba(120, 120, 120, 1)",
-    },
-    timeScale: {
-      borderColor: "rgba(120, 120, 120, 1)",
-      timeVisible: true,
-      secondsVisible: false,
-    },
-  });
+    const chart = LightweightCharts.createChart(document.getElementById("chart"), {
+      layout: {
+        background: { color: "#000000" },
+        textColor: "#ffffff",
+      },
+      grid: {
+        vertLines: { color: "#2B3543", style: 0, visible: true },
+        horzLines: { color: "#2B3543", style: 0, visible: true },
+      },
+      rightPriceScale: {
+        borderColor: "#2B3543",
+      },
+      timeScale: {
+        borderColor: "#2B3543",
+        timeVisible: true,
+        secondsVisible: false,
+      },
+    });
 
-  const candleSeries = chart.addCandlestickSeries({
-    upColor: "#26a69a",
-    borderUpColor: "#26a69a",
-    wickUpColor: "#26a69a",
-    downColor: "#ef5350",
-    borderDownColor: "#ef5350",
-    wickDownColor: "#ef5350",
-  });
+    const candleSeries = chart.addCandlestickSeries({
+      upColor: "#26a69a",
+      borderUpColor: "#26a69a",
+      wickUpColor: "#26a69a",
+      downColor: "#ef5350",
+      borderDownColor: "#ef5350",
+      wickDownColor: "#ef5350",
+    });
 
-  let candles = [];
-  let time = Math.floor(Date.now() / 1000) - 60 * 300;
-  let price = 100;
+    let candles = [];
+    let time = Math.floor(Date.now() / 1000) - 60 * 300;
+    let price = 4000;
 
-  for (let i = 0; i < 300; i++) {
-    const open = price;
-    const close = open + (Math.random() - 0.5) * 5;
-    const high = Math.max(open, close) + Math.random() * 2;
-    const low = Math.min(open, close) - Math.random() * 2;
-    candles.push({ time, open, high, low, close });
-    time += 60;
-    price = close;
-  }
-
-  candleSeries.setData(candles);
-
-  let tradeSignal = "buy";
-  const tradeRef = ref(db, "trade/trade");
-  onValue(tradeRef, (snapshot) => {
-    const val = snapshot.val();
-    if (val) tradeSignal = val.toLowerCase();
-  });
-
-  let currentCandle = candles[candles.length - 1];
-  let lastCandleStart = Date.now();
-  const CANDLE_DURATION = 60000;
-  const startTime = Date.now();
-
-  setInterval(() => {
-    const now = Date.now();
-    const elapsed = (now - startTime) % 3000;
-    let speed = elapsed < 1000 ? 0.4 : 2.1;
-
-    if (now - lastCandleStart >= CANDLE_DURATION) {
-      const open = currentCandle.close;
-      const close = open;
-      const high = open;
-      const low = open;
-      const newCandle = { time, open, high, low, close };
+    for (let i = 0; i < 300; i++) {
+      const open = price;
+      const close = open + (Math.random() - 0.5) * 5;
+      const high = Math.max(open, close) + Math.random() * 2;
+      const low = Math.min(open, close) - Math.random() * 2;
+      candles.push({ time, open, high, low, close });
       time += 60;
-      candles.push(newCandle);
-      if (candles.length > 500) candles.shift();
-      currentCandle = newCandle;
-      lastCandleStart = now;
-    } else {
-      let close;
-      const open = currentCandle.open;
-
-      if (tradeSignal === "buy") {
-        close = currentCandle.close + Math.random() * speed;
-      } else if (tradeSignal === "sell") {
-        close = currentCandle.close - Math.random() * speed;
-      } else {
-        close = currentCandle.close + (Math.random() - 0.5) * 0.1;
-      }
-
-      const high = Math.max(currentCandle.high, close);
-      const low = Math.min(currentCandle.low, close);
-      currentCandle.close = close;
-      currentCandle.high = high;
-      currentCandle.low = low;
-      candles[candles.length - 1] = currentCandle;
+      price = close;
     }
 
     candleSeries.setData(candles);
-  }, 1000);
-</script>
+
+    let tradeSignal = "buy";
+    const tradeRef = ref(db, "trade/trade");
+    onValue(tradeRef, (snapshot) => {
+      const val = snapshot.val();
+      if (val) tradeSignal = val.toLowerCase();
+    });
+
+    let currentCandle = candles[candles.length - 1];
+    let lastCandleStart = Date.now();
+    const CANDLE_DURATION = 60000;
+    const startTime = Date.now();
+
+    setInterval(() => {
+      const now = Date.now();
+      const elapsed = (now - startTime) % 3000;
+      let speed = elapsed < 1000 ? 0.4 : 2.1;
+
+      if (now - lastCandleStart >= CANDLE_DURATION) {
+        const open = currentCandle.close;
+        const close = open;
+        const high = open;
+        const low = open;
+        const newCandle = { time, open, high, low, close };
+        time += 60;
+        candles.push(newCandle);
+        if (candles.length > 500) candles.shift();
+        currentCandle = newCandle;
+        lastCandleStart = now;
+      } else {
+        let close;
+        const open = currentCandle.open;
+
+        if (tradeSignal === "buy") {
+          close = currentCandle.close + Math.random() * speed;
+        } else if (tradeSignal === "sell") {
+          close = currentCandle.close - Math.random() * speed;
+        } else {
+          close = currentCandle.close + (Math.random() - 0.5) * 0.1;
+        }
+
+        const high = Math.max(currentCandle.high, close);
+        const low = Math.min(currentCandle.low, close);
+        currentCandle.close = close;
+        currentCandle.high = high;
+        currentCandle.low = low;
+        candles[candles.length - 1] = currentCandle;
+      }
+
+      candleSeries.setData(candles);
+    }, 1000);
+  </script>
 </head>
 <body>
-  <div id="chart"></div>
+  <div id="chart">
+    <div class="chart-header">
+      <div class="symbol">XAUUSD ↓ M1</div>
+      <div class="desc">Spot Gold...</div>
+    </div>
+  </div>
 </body>
 </html>
