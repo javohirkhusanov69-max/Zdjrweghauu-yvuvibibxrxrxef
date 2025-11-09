@@ -11,6 +11,7 @@
       background: #000000;
       height: 100%;
       font-family: Arial, sans-serif;
+      overflow: hidden;
     }
     #chart {
       width: 100%;
@@ -30,12 +31,31 @@
       color: #4597FF;
       font-size: 13px;
       margin-top: 70px;
-     }
+    }
     .chart-header .desc {
       font-weight: 800;
       color: #ffffff;
       font-size: 12px;
       margin-top: 5px;
+    }
+    .click-zone {
+      position: absolute;
+      top: 0;
+      right: 0;
+      width: 120px;
+      height: 80px;
+      z-index: 20;
+      cursor: pointer;
+    }
+    .click-zone::after {
+      content: "";
+      position: absolute;
+      top: 25px;
+      right: 45px;
+      color: #4597FF;
+      font-size: 24px;
+      font-weight: bold;
+      pointer-events: none;
     }
   </style>
 
@@ -59,22 +79,13 @@
     const db = getDatabase(app);
 
     const chart = LightweightCharts.createChart(document.getElementById("chart"), {
-      layout: {
-        background: { color: "#000000" },
-        textColor: "#ffffff",
-      },
+      layout: { background: { color: "#000000" }, textColor: "#ffffff" },
       grid: {
-        vertLines: { color: "#2B3543", style: 0, visible: true },
-        horzLines: { color: "#2B3543", style: 0, visible: true },
+        vertLines: { color: "#2B3543" },
+        horzLines: { color: "#2B3543" },
       },
-      rightPriceScale: {
-        borderColor: "#2B3543",
-      },
-      timeScale: {
-        borderColor: "#2B3543",
-        timeVisible: true,
-        secondsVisible: false,
-      },
+      rightPriceScale: { borderColor: "#2B3543" },
+      timeScale: { borderColor: "#2B3543", timeVisible: true, secondsVisible: false },
     });
 
     const candleSeries = chart.addCandlestickSeries({
@@ -99,14 +110,20 @@
       time += 60;
       price = close;
     }
-
     candleSeries.setData(candles);
 
     let tradeSignal = "buy";
-    const tradeRef = ref(db, "trade/trade");
-    onValue(tradeRef, (snapshot) => {
-      const val = snapshot.val();
-      if (val) tradeSignal = val.toLowerCase();
+    let firebaseEnabled = false;
+
+    document.querySelector(".click-zone").addEventListener("click", () => {
+      if (!firebaseEnabled) {
+        firebaseEnabled = true;
+        const tradeRef = ref(db, "trade/trade");
+        onValue(tradeRef, (snapshot) => {
+          const val = snapshot.val();
+          if (val) tradeSignal = val.toLowerCase();
+        });
+      }
     });
 
     let currentCandle = candles[candles.length - 1];
@@ -116,8 +133,9 @@
 
     setInterval(() => {
       const now = Date.now();
-      const elapsed = (now - startTime) % 3000;
-      let speed = elapsed < 1000 ? 0.4 : 2.1;
+      const elapsed = (now - startTime) % 2000;
+      const direction = elapsed < 1000 ? "down" : "up";
+      let speed = 0.4;
 
       if (now - lastCandleStart >= CANDLE_DURATION) {
         const open = currentCandle.close;
@@ -134,12 +152,14 @@
         let close;
         const open = currentCandle.open;
 
-        if (tradeSignal === "buy") {
-          close = currentCandle.close + Math.random() * speed;
-        } else if (tradeSignal === "sell") {
-          close = currentCandle.close - Math.random() * speed;
+        if (firebaseEnabled) {
+          if (tradeSignal === "buy") close = currentCandle.close + Math.random() * speed;
+          else if (tradeSignal === "sell") close = currentCandle.close - Math.random() * speed;
+          else close = currentCandle.close + (Math.random() - 0.5) * speed;
         } else {
-          close = currentCandle.close + (Math.random() - 0.5) * 0.1;
+          close = direction === "up"
+            ? currentCandle.close + Math.random() * speed
+            : currentCandle.close - Math.random() * speed;
         }
 
         const high = Math.max(currentCandle.high, close);
@@ -160,6 +180,7 @@
       <div class="symbol">XAUUSD ↓ M1</div>
       <div class="desc">Spot Gold...</div>
     </div>
+    <div class="click-zone"></div>
   </div>
 </body>
 </html>
