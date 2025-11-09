@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>BYTROX LUX</title>
+<title>Trade View XAUUSD 2025<title>
 <style>
   html, body {
     margin: 0;
@@ -69,9 +69,10 @@
 
   // ---------------- Demo boshlang‘ich ma’lumotlar ----------------
   let candles = [];
-  let time = Math.floor(Date.now() / 1000);
+  let time = Math.floor(Date.now() / 1000) - 60 * 300; // ~300 ta orqa sham (5 soat)
   let price = 100;
-  for (let i = 0; i < 50; i++) {
+
+  for (let i = 0; i < 300; i++) { // ko‘proq tarix ko‘rsatish uchun
     const open = price;
     const close = open + (Math.random() - 0.5) * 5;
     const high = Math.max(open, close) + Math.random() * 2;
@@ -94,31 +95,55 @@
     }
   });
 
-  // ---------------- Real-time candle harakati ----------------
+  // ---------------- Candle vaqti bilan real harakat ----------------
+  let currentCandle = candles[candles.length - 1];
+  let lastCandleStart = Date.now();
+  const CANDLE_DURATION = 60000; // 1 minut (60,000 ms)
+
   setInterval(() => {
-    // Eski candle larni siljitish
-    candles.shift();
+    const now = Date.now();
 
-    const open = candles[candles.length - 1].close;
-    let close;
+    // Agar 1 minut o'tgan bo‘lsa — yangi sham ochamiz
+    if (now - lastCandleStart >= CANDLE_DURATION) {
+      const open = currentCandle.close;
+      const close = open; // yangi sham boshlanishida close = open
+      const high = open;
+      const low = open;
 
-    // Firebase'dagi signalga qarab yo‘nalish
-    if (tradeSignal === "buy") {
-      close = open + Math.random() * 2; // yuqoriga
-    } else if (tradeSignal === "sell") {
-      close = open - Math.random() * 2; // pastga
+      const newCandle = { time, open, high, low, close };
+      time += 60;
+      candles.push(newCandle);
+
+      // Juda eski shamlarni olib tashlash (masalan, 500 dan oshsa)
+      if (candles.length > 500) candles.shift();
+
+      currentCandle = newCandle;
+      lastCandleStart = now;
     } else {
-      close = open + (Math.random() - 0.5) * 1; // neytral
+      // Hozirgi shamni yangilash (faqat oxirgisini)
+      let close;
+      const open = currentCandle.open;
+
+      if (tradeSignal === "buy") {
+        close = currentCandle.close + Math.random() * 0.2;
+      } else if (tradeSignal === "sell") {
+        close = currentCandle.close - Math.random() * 0.2;
+      } else {
+        close = currentCandle.close + (Math.random() - 0.5) * 0.1;
+      }
+
+      const high = Math.max(currentCandle.high, close);
+      const low = Math.min(currentCandle.low, close);
+
+      currentCandle.close = close;
+      currentCandle.high = high;
+      currentCandle.low = low;
+
+      candles[candles.length - 1] = currentCandle;
     }
 
-    const high = Math.max(open, close) + Math.random() * 1;
-    const low = Math.min(open, close) - Math.random() * 1;
-    const newCandle = { time, open, high, low, close };
-    time += 60;
-
-    candles.push(newCandle);
     candleSeries.setData(candles);
-  }, 1000);
+  }, 1000); // har soniya yangilab turish
 </script>
 </head>
 <body>
