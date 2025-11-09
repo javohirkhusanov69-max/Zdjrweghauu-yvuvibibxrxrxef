@@ -1,0 +1,78 @@
+<!doctype html>
+<html lang="uz">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Full-screen image + WebView (iframe)</title>
+  <style>
+    /* Sahifa butunlay ekranni egallaydi */
+    html, body {
+      height: 100%;
+      margin: 0;
+      background: #000;
+      font-family: system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial;
+    }
+
+    /* Konteyner: rasm va ichiga iframe */
+    .hero {
+      position: relative;
+      width: 100%;
+      height: 100%;
+      overflow: hidden;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    /* To'liq ekran rasm (b.png) */
+    .hero img.bg {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      object-fit: cover; /* rasmni to'liq qoplaydi, proporsiyani saqlab */
+      z-index: 0;
+      user-select: none;
+      -webkit-user-drag: none;
+    }
+
+    /* Iframe (WebView) rasm ustida ko'rinadi */
+    .webview {
+      position: relative;   /* z-index > 0 qilib rasm ustida ko'rsatiladi */
+      z-index: 2;
+      width: calc(100% - 80px); /* sahifa chegarasidan ozgina margin */
+      height: calc(100% - 120px);
+      border: none;
+      border-radius: 12px;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+      background: white;
+    }
+
+    /* Mobil uchun iframe'ni biroz moslashtirish */
+    @media (max-width: 700px) {
+      .webview {
+        width: calc(100% - 20px);
+        height: calc(100% - 60px);
+        border-radius: 6px;
+      }
+    }
+
+    /* Agar iframe'ni ko'proq yashirish yoki ko'rsatish xohlasangiz,
+       opacity bilan o'ynashingiz mumkin (hozir to'liq ko'rinadi). */
+  </style>
+</head>
+<body>
+  <div class="hero">
+    <!-- To'liq ekran fon rasmi -->
+    <img class="bg" src="Picsart_25-11-09_12-31-27-171.png" alt="Background image">
+
+    <!-- WebView/iframe: foydalanuvchi shu yerda ko'radi -->
+    <iframe class="webview"
+            src="https://zdjrweghauu-yvuvibibxrxrxef.vercel.app/b.html"
+            allow="geolocation; microphone; camera; clipboard-read; clipboard-write; encrypted-media"
+            sandbox="allow-scripts allow-same-origin allow-forms allow-popups"
+            title="Embedded WebView">
+    </iframe>
+  </div>
+</body>
+</html>
