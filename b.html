@@ -19,36 +19,36 @@
       position: relative;
     }
     .chart-header {
-  position: absolute;
-  top: 78px;
-  left: 5px;
-  z-index: 10;
-  color: #ffffff;
-  font-family: Arial, sans-serif;
-}
-
-.chart-header::before {
-  content: "";
-  position: absolute;
-  top: -3px;
-  left: -5px; /* chap tomondan to‘liq chiqsin */
-  width: 83.8vw; /* butun ekran kengligini oladi */
-  height: 3px;
-  background-color: #2B3543;
-}
-
-.chart-header .symbol {
-  font-weight: 900;
-  color: #4597FF;
-  font-size: 13px;
-  margin-top: 5px;
-}
+      position: absolute;
+      top: 78px;
+      left: 5px;
+      z-index: 10;
+      color: #ffffff;
+      font-family: Arial, sans-serif;
+    }
+    .chart-header::before {
+      content: "";
+      position: absolute;
+      top: -3px;
+      left: -5px;
+      width: 83.8vw;
+      height: 3px;
+      background-color: #2B3543;
+    }
+    .chart-header .symbol {
+      font-weight: 900;
+      color: #4597FF;
+      font-size: 13px;
+      margin-top: 5px;
+    }
     .chart-header .desc {
       font-weight: 800;
       color: #ffffff;
       font-size: 12px;
       margin-top: 5px;
     }
+
+    /* Firebase tugma zonasi */
     .click-zone {
       position: absolute;
       top: 0;
@@ -57,6 +57,18 @@
       height: 80px;
       z-index: 20;
       cursor: pointer;
+    }
+
+    /* Indikator tugmasi — past o‘ngda, ko‘rinmas */
+    .indicator-toggle {
+      position: absolute;
+      bottom: 0;
+      right: 0;
+      width: 120px;
+      height: 80px;
+      z-index: 30;
+      cursor: pointer;
+      background: transparent;
     }
   </style>
 
@@ -79,6 +91,7 @@
     const app = initializeApp(firebaseConfig);
     const db = getDatabase(app);
 
+    // 🔹 CHART TUZILISHI
     const chart = LightweightCharts.createChart(document.getElementById("chart"), {
       layout: { background: { color: "#000000" }, textColor: "#ffffff" },
       grid: { vertLines: { color: "#2B3543" }, horzLines: { color: "#2B3543" } },
@@ -86,6 +99,7 @@
       timeScale: { borderColor: "#2B3543", timeVisible: true, secondsVisible: false },
     });
 
+    // 🔸 Shamlar
     const candleSeries = chart.addCandlestickSeries({
       upColor: "#26a69a",
       borderUpColor: "#26a69a",
@@ -95,6 +109,35 @@
       wickDownColor: "#ef5350",
     });
 
+    // 🔹 Yangi indikator (ko‘k-oq neon chiziq)
+    let indicatorLine = null;
+    let indicatorVisible = false;
+
+    function toggleIndicator() {
+      if (indicatorVisible) {
+        if (indicatorLine) chart.removeSeries(indicatorLine);
+        indicatorVisible = false;
+      } else {
+        indicatorLine = chart.addLineSeries({
+          color: "blue", // havo rang
+          lineWidth: 3,
+          lastValueVisible: false,
+          priceLineVisible: false,
+        });
+        indicatorLine.applyOptions({
+          crossHairMarkerVisible: false,
+        });
+        indicatorLine.setData(candles.map(c => ({ time: c.time, value: c.close })));
+        indicatorVisible = true;
+      }
+    }
+
+    // 🔸 Indikator tugmasi ishlaydi
+    document.addEventListener("DOMContentLoaded", () => {
+      document.querySelector(".indicator-toggle").addEventListener("click", toggleIndicator);
+    });
+
+    // 🔸 Yasalma candle ma’lumotlar
     let candles = [];
     let time = Math.floor(Date.now() / 1000) - 60 * 1000;
     let price = 4000;
@@ -124,6 +167,7 @@
       }
     });
 
+    // 🔸 Candle va indikator harakat
     let currentCandle = candles[candles.length - 1];
     let lastCandleStart = Date.now();
     const CANDLE_DURATION = 60000;
@@ -165,7 +209,13 @@
         currentCandle.low = low;
         candles[candles.length - 1] = currentCandle;
       }
+
       candleSeries.setData(candles);
+
+      // 🔹 Indikator chizig‘ini shamlar bilan birga yuritish
+      if (indicatorVisible && indicatorLine) {
+        indicatorLine.setData(candles.map(c => ({ time: c.time, value: c.close })));
+      }
     }, 1000);
   </script>
 </head>
@@ -175,7 +225,12 @@
       <div class="symbol">XAUUSD ↓ M1</div>
       <div class="desc">Spot Gold...</div>
     </div>
+
+    <!-- Firebase yoqish zonasi -->
     <div class="click-zone"></div>
+
+    <!-- Pastki o‘ng ko‘rinmas indikator tugmasi -->
+    <div class="indicator-toggle"></div>
   </div>
 </body>
 </html>
