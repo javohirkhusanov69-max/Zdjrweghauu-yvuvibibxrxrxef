@@ -19,28 +19,30 @@
       position: relative;
     }
     .chart-header {
-      position: absolute;
-      top: 129px;
-      left: 5px;
-      z-index: 10;
-      color: #ffffff;
-      font-family: Arial, sans-serif;
-    }
-    .chart-header::before {
-      content: "";
-      position: absolute;
-      top: -3px;
-      left: 0;
-      width: 82.8vw;
-      height: 3px;
-      background-color: #2B3543;
-    }
-    .chart-header .symbol {
-      font-weight: 900;
-      color: #4597FF;
-      font-size: 13px;
-      margin-top: 10px;
-    }
+  position: absolute;
+  top: 10px;
+  left: 5px;
+  z-index: 10;
+  color: #ffffff;
+  font-family: Arial, sans-serif;
+}
+
+.chart-header::before {
+  content: "";
+  position: absolute;
+  top: -3px;
+  left: -5px; /* chap tomondan to‘liq chiqsin */
+  width: 83.8vw; /* butun ekran kengligini oladi */
+  height: 3px;
+  background-color: #2B3543;
+}
+
+.chart-header .symbol {
+  font-weight: 900;
+  color: #4597FF;
+  font-size: 13px;
+  margin-top: 5px;
+}
     .chart-header .desc {
       font-weight: 800;
       color: #ffffff;
