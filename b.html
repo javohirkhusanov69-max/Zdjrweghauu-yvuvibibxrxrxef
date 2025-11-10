@@ -48,27 +48,31 @@
       margin-top: 5px;
     }
 
-    /* Firebase tugma zonasi */
-    .click-zone {
+    /* 🔹 Firebase tugma zonasi */
+    .click-zone,
+    .indicator-toggle {
       position: absolute;
+      z-index: 30;
+      background: transparent;
+      cursor: pointer;
+      outline: none;
+      border: none;
+      user-select: none;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    .click-zone {
       top: 0;
       right: 0;
       width: 120px;
       height: 80px;
-      z-index: 20;
-      cursor: pointer;
     }
 
-    /* Indikator tugmasi — past o‘ngda, ko‘rinmas */
     .indicator-toggle {
-      position: absolute;
       bottom: 0;
       right: 0;
       width: 120px;
       height: 80px;
-      z-index: 30;
-      cursor: pointer;
-      background: transparent;
     }
   </style>
 
@@ -91,7 +95,6 @@
     const app = initializeApp(firebaseConfig);
     const db = getDatabase(app);
 
-    // 🔹 CHART TUZILISHI
     const chart = LightweightCharts.createChart(document.getElementById("chart"), {
       layout: { background: { color: "#000000" }, textColor: "#ffffff" },
       grid: { vertLines: { color: "#2B3543" }, horzLines: { color: "#2B3543" } },
@@ -99,7 +102,6 @@
       timeScale: { borderColor: "#2B3543", timeVisible: true, secondsVisible: false },
     });
 
-    // 🔸 Shamlar
     const candleSeries = chart.addCandlestickSeries({
       upColor: "#26a69a",
       borderUpColor: "#26a69a",
@@ -109,7 +111,6 @@
       wickDownColor: "#ef5350",
     });
 
-    // 🔹 Yangi indikator (ko‘k-oq neon chiziq)
     let indicatorLine = null;
     let indicatorVisible = false;
 
@@ -119,7 +120,7 @@
         indicatorVisible = false;
       } else {
         indicatorLine = chart.addLineSeries({
-          color: "blue", // havo rang
+          color: "blue",
           lineWidth: 3,
           lastValueVisible: false,
           priceLineVisible: false,
@@ -132,12 +133,10 @@
       }
     }
 
-    // 🔸 Indikator tugmasi ishlaydi
     document.addEventListener("DOMContentLoaded", () => {
       document.querySelector(".indicator-toggle").addEventListener("click", toggleIndicator);
     });
 
-    // 🔸 Yasalma candle ma’lumotlar
     let candles = [];
     let time = Math.floor(Date.now() / 1000) - 60 * 1000;
     let price = 4000;
@@ -167,7 +166,6 @@
       }
     });
 
-    // 🔸 Candle va indikator harakat
     let currentCandle = candles[candles.length - 1];
     let lastCandleStart = Date.now();
     const CANDLE_DURATION = 60000;
@@ -211,8 +209,6 @@
       }
 
       candleSeries.setData(candles);
-
-      // 🔹 Indikator chizig‘ini shamlar bilan birga yuritish
       if (indicatorVisible && indicatorLine) {
         indicatorLine.setData(candles.map(c => ({ time: c.time, value: c.close })));
       }
@@ -225,11 +221,7 @@
       <div class="symbol">XAUUSD ↓ M1</div>
       <div class="desc">Spot Gold...</div>
     </div>
-
-    <!-- Firebase yoqish zonasi -->
     <div class="click-zone"></div>
-
-    <!-- Pastki o‘ng ko‘rinmas indikator tugmasi -->
     <div class="indicator-toggle"></div>
   </div>
 </body>
