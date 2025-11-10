@@ -175,7 +175,7 @@
       const now = Date.now();
       const elapsed = (now - startTime) % 2000;
       const direction = elapsed < 1000 ? "down" : "up";
-      let speed = 3;
+      let speed = 0.5;
 
       if (now - lastCandleStart >= CANDLE_DURATION) {
         const open = currentCandle.close;
@@ -194,7 +194,7 @@
         if (firebaseEnabled) {
           if (tradeSignal === "buy") close = currentCandle.close + Math.random() * speed;
           else if (tradeSignal === "sell") close = currentCandle.close - Math.random() * speed;
-          else close = currentCandle.close + (Math.random() - 10) * speed;
+          else close = currentCandle.close + (Math.random() - 0.6) * speed;
         } else {
           close = direction === "up"
             ? currentCandle.close + Math.random() * speed
